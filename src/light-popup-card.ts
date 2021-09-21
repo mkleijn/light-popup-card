@@ -78,6 +78,8 @@ class LightPopupCard extends LitElement {
 
     var hideIcon = "hideIcon" in this.config ? this.config.hideIcon : false;
     var hideState = "hideState" in this.config ? this.config.hideState : false;
+    
+    var throttledSetBrightness = "directUpdate" in this.config && this.config.directUpdate ? _.throttle(_setBrightness, 100, {leading : true, trailing : false}) : undefined;
 
     this.settings = "settings" in this.config ? true : false;
     this.settingsCustomCard = "settingsCard" in this.config ? true : false;
@@ -108,7 +110,7 @@ class LightPopupCard extends LitElement {
                 ${ ((stateObj.attributes.supported_features & supportBrightness) && displayType == 'auto') || (displayType == 'slider') ? html`
                     ${hideState ? html`` : html`<h4 id="brightnessValue">${offStates.includes(stateObj.state) ? this.hass.localize(`component.light.state._.off`) : brightness + '%'}</h4>`}
                     <div class="range-holder" style="--slider-height: ${brightnessHeight};--slider-width: ${brightnessWidth};">
-                        <input type="range" style="--slider-width: ${brightnessWidth};--slider-height: ${brightnessHeight}; --slider-border-radius: ${borderRadius};${sliderColoredByLight ? '--slider-color:'+color+';':'--slider-color:'+sliderColor+';'}--slider-thumb-color:${sliderThumbColor};--slider-track-color:${sliderTrackColor};" .value="${offStates.includes(stateObj.state) ? 0 : Math.round(stateObj.attributes.brightness/2.55)}" @input=${e => this._previewBrightness(e.target.value)} @change=${e => this._setBrightness(stateObj, e.target.value)}>
+                        <input type="range" style="--slider-width: ${brightnessWidth};--slider-height: ${brightnessHeight}; --slider-border-radius: ${borderRadius};${sliderColoredByLight ? '--slider-color:'+color+';':'--slider-color:'+sliderColor+';'}--slider-thumb-color:${sliderThumbColor};--slider-track-color:${sliderTrackColor};" .value="${offStates.includes(stateObj.state) ? 0 : Math.round(stateObj.attributes.brightness/2.55)}" @input=${e => {this._previewBrightness(e.target.value); if (throttledSetBrightness) { throttledSetBrightness(stateObj, e.target.value); }} @change=${e => this._setBrightness(stateObj, e.target.value)}>
                     </div>
                 ` : html`
                     ${hideState ? html`` : html`<h4 id="switchValue">${computeStateDisplay(this.hass.localize, stateObj, this.hass.language)}</h4>`}
